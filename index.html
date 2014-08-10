@@ -2,9 +2,19 @@
 <body>
 <p>Hello, There ! </p>
 <p>Thanks for coming to this site. Currently, this site is under construction...</p>
-<select>
-<option value="volvo">Volvo</option>
-<option value="mercedes">Merc</option>
+<select id="menu" onChange="go()">
+<option value="">Select Division</option>
+<option value="div1">Div 1</option>
+<option value="div2">Div 2</option>
 </select>
+<p id="p1"></p>
+<script>
+function go()
+{
+ var sel = document.getElementById('menu');
+	var sv = sel.options[sel.selectedIndex].value;
+	document.getElementById("p1").innerHTML = 'You have selected '+ sv;
+}
+</script>
 </body>
 <html>
