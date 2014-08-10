@@ -2,18 +2,29 @@
 <body>
 <p>Hello, There ! </p>
 <p>Thanks for coming to this site. Currently, this site is under construction...</p>
-<select id="menu" onChange="go()">
+<p>
+<select id="menu1" onChange="go()">
 <option value="">Select Division</option>
 <option value="div1">Div 1</option>
 <option value="div2">Div 2</option>
 </select>
+<select id="menu2" onChange = "go()">
+<option value="">Select Problem Index</option>
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="E">E</option>
+</select>
+</p>
 <p id="p1"></p>
 <script>
 function go()
 {
  var sel = document.getElementById('menu');
 	var sv = sel.options[sel.selectedIndex].value;
-	document.getElementById("p1").innerHTML = 'You have selected '+ sv;
+	if(sv == "") document.getElementById("p1").innerHTML = 'You have selected '+ sv;
+	else document.getElementById("p1").innerHTML = 'Please Select something'; 
 }
 </script>
 </body>
