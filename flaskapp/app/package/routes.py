@@ -1,17 +1,9 @@
+from package import app
 from flask import Flask, flash, redirect, url_for, request, render_template, redirect, session
 from flaskext.mysql import MySQL
 from flask.ext.wtf import Form
 from wtforms import BooleanField, TextField, PasswordField, validators
-#from myapplication.models import User
-
-app = Flask(__name__)
-mysql = MySQL()
-app.secret_key = 'secrets_are_meant_to_be_kept'
-app.config['MYSQL_DATABASE_USER'] = 'rudradeep'
-app.config['MYSQL_DATABASE_PASSWORD'] = '****'
-app.config['MYSQL_DATABASE_DB'] = 'EmpData'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-mysql.init_app(app)
+from models import db,User,Note
 
 class LoginForm(Form):
 	email = TextField('Email',[validators.Required()])
@@ -23,7 +15,7 @@ class LoginForm(Form):
 		rv = Form.validate(self)
 		if not rv:
 			return False
-		user = User.query.filter_by( email=self.email.data ).first()
+		user = User.query.filter_by( email=self.email.data.lower() ).first()
 		if user is None:
 			self.email.errors.append('Unknown mail ID')
 			return False
@@ -34,35 +26,50 @@ class LoginForm(Form):
 		return True
 
 class RegistrationForm(Form):
-    username = TextField('Username', [validators.Length(min=4, max=25)])
-    email = TextField('Email', [validators.Length(min=6, max=35)])
-    password = PasswordField('Password', [
-        validators.Required(),
-        validators.EqualTo('confirm', message='Passwords must match')
-    ])
-    confirm = PasswordField('Repeat Password')
+	username = TextField('Username', [validators.Length(min=4, max=25)])
+	email = TextField('Email', [validators.Length(min=6, max=35)])
+	password = PasswordField('Password', [
+	validators.Required(),validators.EqualTo('confirm', message='Passwords must match')])
+	confirm = PasswordField('Repeat Password')
+	def __init__(self, *args, **kwargs):
+		Form.__init__(self, *args, **kwargs)
+	def validate(self):
+		if not Form.validate(self):
+			return False
+		user = User.query.filter_by(email = self.email.data.lower()).first()
+		if user:
+			self.email.errors.append("That email is already taken")
+			return False
+		else:
+			return True
 
 @app.route('/login',methods=['GET','POST'])
 def login():
 	form = LoginForm()
 	if form.validate_on_submit():
 		flash('Login successful.')
-		session['user_id'] = form.user.id
-		return redirect('/home')
+		#user = User.query.filter_by(email = form.email.data.lower()).first()
+		session['uid'] = form.user.uid
+		return redirect('/')
 	return render_template('login.html', form=form)
 
 @app.route('/register',methods=['GET','POST'])
 def register():
     form = RegistrationForm(request.form)
     if request.method == 'POST' and form.validate():
-	con = mysql.connect()
-	cursor = con.cursor()
-	cursor.execute("insert into User values (NULL,%s,%s,%s);",(form.username.data, form.password.data, form.email.data))
-	con.commit()        
+	newuser = User(form.username.data, form.password.data, form.email.data)
+	db.session.add(newuser)
+	db.session.commit()        
 	flash('Thanks for registering.')
         return redirect('/login')
     return render_template('register.html', form=form)
 
+@app.route('/logout')
+def logout():
+	if 'uid' not in session:
+		return redirect('/login')
+	session.pop('uid',None)
+	return redirect('/')
 @app.route('/')
 def home():
  return render_template('home.html')
@@ -75,10 +82,9 @@ def about():
 def save():
 	title = request.form['ntitle']
 	body = request.form['nbody']
-	con = mysql.connect()
-	cursor = con.cursor()
-	cursor.execute("insert into NoteData values (%s,%s,NULL);", (title,body) )
-	con.commit()
+	note = Note(title,body,session['uid'])
+	db.session.add(note)
+	db.session.commit()
 	flash('Note saved successfully.')
 	return redirect("/")
 
